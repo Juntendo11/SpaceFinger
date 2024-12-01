@@ -71,7 +71,6 @@ def rotation_matrix_from_vectors(vec1, vec2):
     rotation_matrix = np.eye(3) + kmat + kmat.dot(kmat) * ((1 - c) / (s ** 2))
     return rotation_matrix
 
-
 def calibrate(lmlists,samples):
     """
     Calibration using samples
@@ -161,7 +160,13 @@ def main():
                 current_dist =  math.sqrt((gx2-gx1)**2 + (gy2-gy1)**2 + (gz2-gz1)**2) #Scale
                 current_vec = np.array([gx2-gx1, gy2-gy1, gz2-gz1]) #Rotation
                 current_pos = np.array([cgx, cgy, cgz])  #Translation
+                
                 #norm_vec = current_vec/np.linalg.norm(current_vec)
+                scale = current_dist
+                rotation = rotation_matrix_from_vectors(vec_avg, current_vec)
+                print(rotation)
+                translation = np.subtract(pos_avg, current_pos) #XYZ
+                transformation = np.arange(1, 17).reshape(4,4) #Create 4x4 m,atrix
 
         #FPS
         cTime = time.time()
