@@ -5,6 +5,8 @@ import math
 import mathutils
 import numpy as np
 
+from pytransform3d.rotations import matrix_from_two_vectors
+
 # class creation
 class handDetector():
     def __init__(self, mode=False, maxHands=2, detectionCon=0.5,modelComplexity=1,trackCon=0.5):
@@ -56,12 +58,12 @@ class handDetector():
                 lmlist.append([id,gx,gy,gz,lx,ly])
         return lmlist
 
-def rotation_matrix_from_vectors(vec1, vec2):
-    """ Find the rotation matrix that aligns vec1 to vec2
-    :param vec1: A 3d "source" vector
-    :param vec2: A 3d "destination" vector
-    :return mat: A transform matrix (3x3) which when applied to vec1, aligns it with vec2.
-    https://stackoverflow.com/questions/45142959/calculate-rotation-matrix-to-align-two-vectors-in-3d-space
+def arotation_matrix_from_vectors(vec1, vec2):
+    """# Find the rotation matrix that aligns vec1 to vec2
+    #:param vec1: A 3d "source" vector
+    #:param vec2: A 3d "destination" vector
+    #:return mat: A transform matrix (3x3) which when applied to vec1, aligns it with vec2.
+    #https://stackoverflow.com/questions/45142959/calculate-rotation-matrix-to-align-two-vectors-in-3d-space
     """
     a, b = (vec1 / np.linalg.norm(vec1)).reshape(3), (vec2 / np.linalg.norm(vec2)).reshape(3)
     v = np.cross(a, b)
@@ -70,6 +72,27 @@ def rotation_matrix_from_vectors(vec1, vec2):
     kmat = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
     rotation_matrix = np.eye(3) + kmat + kmat.dot(kmat) * ((1 - c) / (s ** 2))
     return rotation_matrix
+
+def create_view_matrix(rotation, translation):
+    """
+    Create a 4x4 view matrix from a rotation matrix and translation vector.
+    
+    :param rotation: 3x3 rotation matrix (numpy array).
+    :param translation: 3D translation vector (numpy array).
+    :return: 4x4 view matrix (numpy array).
+    """
+    # Transpose rotation matrix to invert it (for view matrix)
+    R_view = rotation.T
+    
+    # Compute the translated position in view space
+    t_view = -np.dot(R_view, translation)
+    
+    # Construct the 4x4 view matrix
+    view_matrix = np.eye(4)
+    view_matrix[:3, :3] = R_view
+    view_matrix[:3, 3] = t_view
+    
+    return view_matrix
 
 def calibrate(lmlists,samples):
     """
@@ -161,12 +184,13 @@ def main():
                 current_vec = np.array([gx2-gx1, gy2-gy1, gz2-gz1]) #Rotation
                 current_pos = np.array([cgx, cgy, cgz])  #Translation
                 
-                #norm_vec = current_vec/np.linalg.norm(current_vec)
                 scale = current_dist
                 rotation = rotation_matrix_from_vectors(vec_avg, current_vec)
+                #rotation = matrix_from_two_vectors(vec_avg, current_vec)
                 print(rotation)
                 translation = np.subtract(pos_avg, current_pos) #XYZ
-                transformation = np.arange(1, 17).reshape(4,4) #Create 4x4 m,atrix
+                transformation = create_view_matrix(rotation, translation)
+                #print(transformation)
 
         #FPS
         cTime = time.time()
